@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
+
 //#include "G:\Program Files\MATLAB\R2018a\extern\include\mat.h"
 
 // All matrices are in row major format
@@ -174,6 +176,7 @@ float* patch_finder(float *F, int patch_size, int row_central, int col_central, 
             free(up_right_extension);
             free(right_extension);
         }
+        // The patch exceed upper row
         else if(first_row < 0){
             // Helpful variables for making the extensions
             int index = 0;
@@ -210,12 +213,80 @@ float* patch_finder(float *F, int patch_size, int row_central, int col_central, 
         }
         
     }
-    
-    
-    
-    
 
     return Patch;
+}
+
+float *matToRowMajor(float** matrix, int n, int m){
+        float *RowMajor = (float*)malloc(n*m*sizeof(float));
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < m; j++)
+            {
+                RowMajor[i*n+j] = matrix[i][j];
+            }
+            
+        }
+        
+        return RowMajor; 
+}
+ 
+float* read_csv(int row, int col, char *filename){
+	FILE *file;
+	file = fopen(filename, "r");
+    if (file == NULL)
+    {
+       fprintf(stderr,"error fopen(): Failed to open CSV file");
+    }
+    
+    float **data = (float **)malloc(row*sizeof(float*));
+    for (int i = 0; i < row; i++)
+    {
+        data[i] = (float*)malloc(row*sizeof(float));
+    }
+    float *dataRowMajor = (float*)malloc(row*col*sizeof(float));
+            
+    int count = 0;
+    char c;
+    for (c = getc(file); c != EOF; c = getc(file)){ 
+    // Increment count for this character 
+        count = count + 1; 
+    }
+    char buffer[count];
+    char *record, *line;
+    int i=0,j=0;
+    while((line=fgets(buffer,sizeof(buffer),file))!=NULL)
+    {
+        record = strtok(line,",");
+        while(record != NULL)
+        {
+            printf("%s\t",record) ;    //here you can put the record into the array as per your requirement.
+            printf("\n");
+            data[i][j++] = atof(record);
+            record = strtok(NULL,",");
+            
+        }
+        ++i ;
+    }
+
+    for (int i = 0; i < row; i++)
+    {
+        for (int j = 0; j < col; j++)
+        {
+            printf("%f,", data[i][j]);
+        }
+        printf("\n");
+    }
+    
+    
+    dataRowMajor = matToRowMajor(data, row, col);
+    for (int i = 0; i < row; i++)
+    {
+        free(data[i]);
+    }
+    free(data);
+    return dataRowMajor;
+    
 }
 
 
@@ -233,7 +304,7 @@ float* patch_finder(float *F, int patch_size, int row_central, int col_central, 
 //     Patch = patch_finder(F,patch_size);
 
 
-//     // apply gaussian filter to patch 
+//     //apply gaussian filter to patch 
     
 //     Gaussian_Patch = gaussian_Filtering(Patch, patch_size, patch_sigma);
 
@@ -247,6 +318,19 @@ float* patch_finder(float *F, int patch_size, int row_central, int col_central, 
 //     float* gauss = malloc(size*size*sizeof(float));
 //     float sum = 0;
 //     for (int i = 0; i < size; i++)
+//     {
+//         for (int j = 0; j < size; j++)
+//         {
+//             float rows[size] = P[]
+//             float columns[size] = 
+//         }
+        
+//     }
+    
+// }
+// for (int i = 0; i < COLS; i++)
+// {
+//     for (int j = 0; j < ROWS; j++)
 //     {
 //         for (int j = 0; j < size; j++)
 //         {
