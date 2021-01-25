@@ -228,20 +228,99 @@ float* read_csv(int row, int col, char *filename){
 // }
 
 
-// float** gaussian_Filtering(float** P, int size, float sigma){
-//     float* gauss = malloc(size*size*sizeof(float));
-//     float sum = 0;
-//     for (int i = 0; i < size; i++)
-//     {
-//         for (int j = 0; j < size; j++)
-//         {
-//             float rows[size] = P[]
-//             float columns[size] = 
-//         }
-        
-//     }
+float* gaussian_Filtering(float* P, int size, float sigma){
+    float **kernel = (float **)malloc(size*sizeof(float*));
+    for (int i = 0; i < size; i++)
+    {
+        kernel[i] = (float*)malloc(size*sizeof(float));
+    }
+    float **Patch = (float **)malloc(size*sizeof(float*));
+    for (int i = 0; i < size; i++)
+    {
+        Patch[i] = (float*)malloc(size*sizeof(float));
+    }
     
-// }
+    //Convert patch take to 2d array from row major
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            Patch[i][j] = P[size*i + j];
+        }
+        
+    }
+    float sum = 0;
+    float mu = size/2;
+    //get_kerneL
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            
+           kernel[i][j] = (1 / (2 * M_PI * sigma * sigma)) * exp(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * sigma * sigma));
+           sum += kernel[i][j];
+        }
+        
+    }
+    //NORMALIZE
+    for (int y = 0; y < size; y++)
+    {
+        for (int x = 0; x < size; x++)
+        {
+            kernel[y][x] /= sum;
+        }
+        
+    } 
+
+    convolution_2D(Patch,kernel,Patch,size);
+
+ 
+    P = matToRowMajor(Patch,size,size);
+    for (int i = 0; i < size; i++)
+    {
+        free(kernel[i]);
+    }
+    free(kernel);
+    for (int i = 0; i < size; i++)
+    {
+        free(Patch[i]);
+    }
+    free(Patch);
+    
+    return P;    
+}
+
+
+void convolution_2D(float **P, float **kernel , float **result, int size) {
+
+// find center position of kernel (half of kernel size)
+int kCenterX = size / 2;
+int kCenterY = size / 2;
+
+    for (int i = 0; i < size; ++i)              // rows
+    {
+        for (int j = 0; j < size; ++j)          // columns
+        {
+            for (int m = 0; m < size; ++m)     // kernel rows
+            {
+                int mm = size - 1 - m;      // row index
+
+                for (int n = 0; n < size; ++n) // kernel columns
+                {
+                    int nn = size - 1 - n;  // column index
+
+                    // index of input signal, used for checking boundary
+                    int ii = i + (m - kCenterY);
+                    int jj = j + (n - kCenterX);
+
+                    // ignore input samples which are out of bound
+                    if (ii >= 0 && ii < size  && jj >= 0 && jj < size)
+                    result[i][j] += P[ii][jj] * kernel[m][n];
+                }
+            }
+        }
+    }
+}
 // for (int i = 0; i < COLS; i++)
 // {
 //     for (int j = 0; j < ROWS; j++)
