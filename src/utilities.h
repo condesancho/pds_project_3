@@ -20,202 +20,116 @@ float* patch_finder(float *F, int patch_size, int row_central, int col_central, 
     /*todo implemnt different algorithms for searching patch depending on the central pixel position*/
     
     // Finding the position of the top left patch point in the F array
-    int first_row = row_central - patch_size / 2;
-    int first_col = col_central - patch_size / 2;
-    int last_row = row_central + patch_size / 2 + 1;
-    int last_col = col_central + patch_size / 2 + 1;
+    int first_row = row_central ;
+    int first_col = col_central ;
     // Stores the index of the first element of the patch in F
-    int first_elem = first_row*rows + first_col;
+    int first_elem = first_row*(rows+patch_size-1) + first_col;
 
-    /*When the patch is not getting out of bounds*/
-    if (first_col > -1 && first_row > -1 && last_col < cols+1 && last_row < rows+1){
-        for (int i = 0; i < patch_size; i++){
-            for (int j = 0; j < patch_size; j++){
-                Patch[i*patch_size + j] = F[first_elem + i*rows + j];
-            }
+
+    
+    
+   
+    for (int i = 0; i < patch_size; i++){
+        for (int j = 0; j < patch_size; j++){
+            Patch[i*patch_size + j] = F[first_elem + i*(rows+patch_size-1) + j];
         }
     }
+ 
 
-    else{
-
-        // The patch exceeds the upper left corner
-        if(first_row < 0 && first_col < 0){
-            // Helpful variables for making the extensions
-            int index = 0;
-            int extension_cols = patch_size+first_col;
-            int extension_rows = patch_size+first_row;
-
-            float *upper_extension = (float*)malloc(abs(first_row)*extension_cols*sizeof(float));
-            for(int i=abs(first_row)-1; i>-1; i--){
-                for(int j=0; j<extension_cols; j++){
-                    upper_extension[i*extension_cols+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols-extension_cols;
-            }
-
-            index = 0;
-            float *up_left_extension = (float*)malloc(abs(first_col)*abs(first_row)*sizeof(float));
-            for(int i=abs(first_row)-1; i>-1; i--){
-                for(int j=abs(first_col)-1; j>-1; j--){
-                    up_left_extension[i*abs(first_col)+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols+first_col;
-            }
-
-            index = 0;
-            float *left_extension = (float*)malloc(abs(first_col)*extension_rows*sizeof(float));
-            for(int i=0; i<extension_rows; i++){
-                for(int j=abs(first_col)-1; j>-1; j--){
-                    left_extension[i*abs(first_col)+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols+first_col;
-            }
-
-            index = 0;
-            for (int i = 0; i < patch_size; i++){
-                for (int j = 0; j < patch_size; j++){
-                    if(i<abs(first_row) && j<abs(first_col)){
-                        Patch[i*patch_size + j] = up_left_extension[i*abs(first_col)+j];
-                    }
-                    else if(i<abs(first_row) || j<abs(first_col)){
-                        if(i<abs(first_row)){
-                            Patch[i*patch_size + j] = upper_extension[index];
-                            index++;
-                        } 
-                        else{
-                            Patch[i*patch_size + j] = left_extension[index];
-                            index++;
-                        }
-                        
-                    }
-                    else{
-                        Patch[i*patch_size + j] = F[first_elem + i*rows + j];
-                    }
-                }
-                if(i==abs(first_row)-1) index = 0;
-            }
-            
-            free(upper_extension);
-            free(up_left_extension);
-            free(left_extension);
-
-        }
-        // The patch exceeds the upper right corner
-        else if(first_row < 0 && last_col > cols){
-            // Helpful variables for making the extensions
-            int index = 0;
-            int extension_cols = patch_size-(last_col-cols);
-            int extension_rows = patch_size+first_row;
-
-            index = first_col;
-            float *upper_extension = (float*)malloc(abs(first_row)*extension_cols*sizeof(float));
-            for(int i=abs(first_row)-1; i>-1; i--){
-                for(int j=0; j<extension_cols; j++){
-                    upper_extension[i*extension_cols+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols-extension_cols;
-            }
-
-            index = cols - (last_col-cols);
-            float *up_right_extension = (float*)malloc(abs(first_col)*abs(first_row)*sizeof(float));
-            for(int i=abs(first_row)-1; i>-1; i--){
-                for(int j=abs(first_col)-1; j>-1; j--){
-                    up_right_extension[i*abs(first_col)+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols+first_col;
-            }
-
-            index = cols - (last_col-cols);
-            float *right_extension = (float*)malloc((last_col-cols)*extension_rows*sizeof(float));
-            for(int i=0; i<extension_rows; i++){
-                for(int j=(last_col-cols)-1; j>-1; j--){
-                    right_extension[i*abs(first_col)+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols-(last_col-cols);
-            }
-
-            index = 0;
-            int upper_right_index = 0;
-            for (int i = 0; i < patch_size; i++){
-                for (int j = 0; j < patch_size; j++){
-                    if(i<abs(first_row) && j>last_col-cols){
-                        Patch[i*patch_size + j] = up_right_extension[upper_right_index];
-                        upper_right_index++;
-                    }
-                    else if(i<abs(first_row) || j>last_col-cols){
-                        if(i<abs(first_row)){
-                            Patch[i*patch_size + j] = upper_extension[index];
-                            index++;
-                        } 
-                        else{
-                            Patch[i*patch_size + j] = right_extension[index];
-                            index++;
-                        }
-                        
-                    }
-                    else{
-                        Patch[i*patch_size + j] = F[first_elem + i*rows + j];
-                    }
-                }
-                if(i==abs(first_row)-1) index = 0;
-            }
-            
-            free(upper_extension);
-            free(up_right_extension);
-            free(right_extension);
-        }
-        // The patch exceed upper row
-        else if(first_row < 0){
-            // Helpful variables for making the extensions
-            int index = 0;
-            int extension_cols = patch_size+first_col;
-
-            float *upper_extension = (float*)malloc(abs(first_row)*extension_cols*sizeof(float));
-            index = first_col;
-            for(int i=abs(first_row)-1; i>-1; i--){
-                for(int j=0; j<extension_cols; j++){
-                    upper_extension[i*extension_cols+j] = F[index];
-                    index++;
-                }
-                // Goes to the next row
-                index += cols-extension_cols;
-            }
-
-            index=0;
-            for (int i = 0; i < patch_size; i++){
-                for (int j = 0; j < patch_size; j++){
-                    if(i<abs(first_row)){
-                        Patch[i*patch_size + j] = upper_extension[index];
-                        index++;
-                    }
-                    else{
-                        Patch[i*patch_size + j] = F[first_elem + i*rows + j];
-                    }
-                }
-            }
-
-            free(upper_extension);
-        }
-        else{
-            printf("I didn't do anything.\n");
-        }
-        
-    }
 
     return Patch;
 }
+//ARRAY PADDING 
+//extends F for patch_size / 2 from each side.
+float* pad_array(float *F, int rows, int cols, int patch_size){
+
+    int rows_new = rows + patch_size - 1;
+    int cols_new = cols + patch_size - 1;
+
+    float *pad_array = (float*)malloc(rows_new*cols_new*sizeof(float));
+
+    int extension = patch_size/2;
+    float *upper_extension = (float*)malloc(extension*cols*sizeof(float));
+
+    int index = 0;
+    for (int i=extension-1; i>-1; i--){
+        for (int j=0; j<cols; j++){
+            upper_extension[i*cols+j] = F[index];
+            index++;
+
+        }
+    }
+
+    float *lower_extension = (float*)malloc(extension*cols*sizeof(float));
+    // Start from the last the element 
+    index = rows*cols-1;
+    for (int i=0; i<extension; i++){
+        for (int j= cols - 1; j>-1; j--){
+            lower_extension[i*cols+j] = F[index];
+            index--;
+           // printf("%f ", lower_extension[i*cols+j]);
+        }
+    }
+    /*
+        Upper left and Right and Lower left and Right extensions of F are symmmetrical to upper_extension and lower_extension respectively.    
+    */
+    for (int i = 0; i < rows_new; i++)
+    {
+        for (int j = 0; j < cols_new; j++)
+        {
+            if (j < extension) //for left side
+            {
+                if (i < extension) //upper left
+                {
+                    pad_array[i*cols_new + j] = upper_extension[i*cols + extension - 1 - j];
+                }else if (i >= extension && i < rows + extension)
+                {
+                    pad_array[i*cols_new + j] = F[(i-extension)*cols + extension - 1 - j];
+                }else
+                {
+                    pad_array[i*cols_new +j] = lower_extension[(i-extension-rows)*cols + extension - 1 - j];
+                }
+                
+            }else if (j >= extension  && j < extension + cols)//for mid extension
+            {
+                int new_j = j -extension;
+                if (i < extension) //upper 
+                {
+                    pad_array[i*cols_new + j] = upper_extension[i*cols + new_j];
+                }else if (i >= extension && i < rows + extension)
+                {
+                    pad_array[i*cols_new + j] = F[(i-extension)*cols + new_j];
+                }else
+                {
+                    pad_array[i*cols_new + j] = lower_extension[(i-extension-rows)*cols + new_j];
+                }
+            }else{
+                int new_j = j -extension - cols + 1;
+                if (i < extension) //upper 
+                {
+                    pad_array[i*cols_new + j] = upper_extension[i*cols + cols - new_j];
+                }else if (i >= extension && i < rows + extension)
+                {
+                    pad_array[i*cols_new + j] = F[(i-extension)*cols + cols - new_j];
+                }else
+                {
+                    pad_array[i*cols_new + j] = lower_extension[(i-extension-rows)*cols + cols - new_j];
+                }
+            }
+            
+            
+        }
+        
+    }
+    
+
+    free(upper_extension);
+    free(lower_extension);
+
+    return pad_array;
+}
+
+
 
 float *matToRowMajor(float** matrix, int n, int m){
         float *RowMajor = (float*)malloc(n*m*sizeof(float));
