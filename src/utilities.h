@@ -226,7 +226,36 @@ float* read_csv(int row, int col, char *filename){
 //     free(Patch);
     
 // }
+void convolution_2D(float **P, float **kernel , float **result, int size) {
 
+// find center position of kernel (half of kernel size)
+int kCenterX = size / 2;
+int kCenterY = size / 2;
+
+    for (int i = 0; i < size; ++i)              // rows
+    {
+        for (int j = 0; j < size; ++j)          // columns
+        {
+            for (int m = 0; m < size; ++m)     // kernel rows
+            {
+                int mm = size - 1 - m;      // row index
+
+                for (int n = 0; n < size; ++n) // kernel columns
+                {
+                    int nn = size - 1 - n;  // column index
+
+                    // index of input signal, used for checking boundary
+                    int ii = i + (m - kCenterY);
+                    int jj = j + (n - kCenterX);
+
+                    // ignore input samples which are out of bound
+                    if (ii >= 0 && ii < size  && jj >= 0 && jj < size)
+                        result[i][j] += P[ii][jj] * kernel[mm][nn];
+                }
+            }
+        }
+    }
+}
 
 float* gaussian_Filtering(float* P, int size, float sigma){
     float **kernel = (float **)malloc(size*sizeof(float*));
@@ -271,6 +300,16 @@ float* gaussian_Filtering(float* P, int size, float sigma){
         }
         
     } 
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            printf("%f",kernel[i][j]);
+        }
+        printf("\n");
+        
+    }
+    
 
     convolution_2D(Patch,kernel,Patch,size);
 
@@ -291,36 +330,7 @@ float* gaussian_Filtering(float* P, int size, float sigma){
 }
 
 
-void convolution_2D(float **P, float **kernel , float **result, int size) {
 
-// find center position of kernel (half of kernel size)
-int kCenterX = size / 2;
-int kCenterY = size / 2;
-
-    for (int i = 0; i < size; ++i)              // rows
-    {
-        for (int j = 0; j < size; ++j)          // columns
-        {
-            for (int m = 0; m < size; ++m)     // kernel rows
-            {
-                int mm = size - 1 - m;      // row index
-
-                for (int n = 0; n < size; ++n) // kernel columns
-                {
-                    int nn = size - 1 - n;  // column index
-
-                    // index of input signal, used for checking boundary
-                    int ii = i + (m - kCenterY);
-                    int jj = j + (n - kCenterX);
-
-                    // ignore input samples which are out of bound
-                    if (ii >= 0 && ii < size  && jj >= 0 && jj < size)
-                    result[i][j] += P[ii][jj] * kernel[m][n];
-                }
-            }
-        }
-    }
-}
 // for (int i = 0; i < COLS; i++)
 // {
 //     for (int j = 0; j < ROWS; j++)
