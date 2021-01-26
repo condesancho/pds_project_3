@@ -9,46 +9,46 @@
 
 // float *F = matOpen("../code/data/house.mat",)
 
-/*patch finder function*/
 
-float* patch_finder(float *F, int patch_size, int row_central, int col_central, int rows, int cols){
+/*Returns the values of a patch given the central pixel positions in the image*/
+float* patch_finder(float *padded_array, int patch_size, int row_central, int col_central, int rows, int cols){
 
-    //allocate space for the patch
+    if (row_central<0 || row_central>rows-1 || col_central<0 || col_central>cols-1){
+        printf("Invalid centre for patch.\n");
+        exit(-1);
+    }
+
+    // Allocate space for the patch
     float* Patch = (float *)malloc(patch_size*patch_size* sizeof(float));
-    //find the patch
-
-    /*todo implemnt different algorithms for searching patch depending on the central pixel position*/
     
-    // Finding the position of the top left patch point in the F array
-    int first_row = row_central ;
-    int first_col = col_central ;
-    // Stores the index of the first element of the patch in F
-    int first_elem = first_row*(rows+patch_size-1) + first_col;
+    // Useful for changing line in the padded array
+    int padded_cols = cols + patch_size - 1;
 
+    // Stores the index of the first element of the patch in the padded aray
+    int first_elem = row_central*padded_cols + col_central;
 
-    
-    
-   
     for (int i = 0; i < patch_size; i++){
         for (int j = 0; j < patch_size; j++){
-            Patch[i*patch_size + j] = F[first_elem + i*(rows+patch_size-1) + j];
+            Patch[i*patch_size + j] = padded_array[first_elem + i*padded_cols + j];
         }
     }
- 
-
 
     return Patch;
 }
+
+
 //ARRAY PADDING 
-//extends F for patch_size / 2 from each side.
+//extends F by patch_size / 2 from each side and uses the mirroring technique
 float* pad_array(float *F, int rows, int cols, int patch_size){
 
     int rows_new = rows + patch_size - 1;
     int cols_new = cols + patch_size - 1;
 
+    // The extended array to be returned
     float *pad_array = (float*)malloc(rows_new*cols_new*sizeof(float));
 
     int extension = patch_size/2;
+
     float *upper_extension = (float*)malloc(extension*cols*sizeof(float));
 
     int index = 0;
@@ -67,59 +67,62 @@ float* pad_array(float *F, int rows, int cols, int patch_size){
         for (int j= cols - 1; j>-1; j--){
             lower_extension[i*cols+j] = F[index];
             index--;
-           // printf("%f ", lower_extension[i*cols+j]);
         }
     }
     /*
         Upper left and Right and Lower left and Right extensions of F are symmmetrical to upper_extension and lower_extension respectively.    
     */
-    for (int i = 0; i < rows_new; i++)
-    {
-        for (int j = 0; j < cols_new; j++)
-        {
-            if (j < extension) //for left side
-            {
-                if (i < extension) //upper left
-                {
+    for (int i = 0; i < rows_new; i++){
+        for (int j = 0; j < cols_new; j++){
+            //For the left side
+            if (j < extension){
+                // Upper left
+                if (i < extension){
                     pad_array[i*cols_new + j] = upper_extension[i*cols + extension - 1 - j];
-                }else if (i >= extension && i < rows + extension)
-                {
+                }
+                // Middle left
+                else if (i >= extension && i < rows + extension){
                     pad_array[i*cols_new + j] = F[(i-extension)*cols + extension - 1 - j];
-                }else
-                {
+                }
+                // Bottom left
+                else{
                     pad_array[i*cols_new +j] = lower_extension[(i-extension-rows)*cols + extension - 1 - j];
                 }
                 
-            }else if (j >= extension  && j < extension + cols)//for mid extension
-            {
+            }
+            // For the middle cols
+            else if (j >= extension  && j < extension + cols){ 
                 int new_j = j -extension;
-                if (i < extension) //upper 
-                {
+                // Upper
+                if (i < extension){ 
                     pad_array[i*cols_new + j] = upper_extension[i*cols + new_j];
-                }else if (i >= extension && i < rows + extension)
-                {
+                }
+                // Middle
+                else if (i >= extension && i < rows + extension){
                     pad_array[i*cols_new + j] = F[(i-extension)*cols + new_j];
-                }else
-                {
+                }
+                // Bottom
+                else{
                     pad_array[i*cols_new + j] = lower_extension[(i-extension-rows)*cols + new_j];
                 }
-            }else{
+            }
+            // For the right side
+            else{
                 int new_j = j -extension - cols + 1;
-                if (i < extension) //upper 
-                {
+                // Upper right
+                if (i < extension){ 
                     pad_array[i*cols_new + j] = upper_extension[i*cols + cols - new_j];
-                }else if (i >= extension && i < rows + extension)
-                {
+                }
+                // Middle right
+                else if (i >= extension && i < rows + extension){
                     pad_array[i*cols_new + j] = F[(i-extension)*cols + cols - new_j];
-                }else
-                {
+                }
+                // Bottom right
+                else{
                     pad_array[i*cols_new + j] = lower_extension[(i-extension-rows)*cols + cols - new_j];
                 }
             }
-            
-            
         }
-        
     }
     
 
