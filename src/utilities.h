@@ -205,30 +205,6 @@ float* read_csv(int row, int col, char *filename){
     return dataRowMajor;
     
 }
-
-
-
-
-
-
-// double* nonLocalMeans(float **F, int patch_size, float filter_sigma, float patch_sigma){
-//     float** Patch = (float *)malloc(patch_size * sizeof(float*));
-//     for (int i = 0; i <//toimport size of the image; i++)
-//     {
-//         Patch[i] = malloc(patch_size * sizeof(float));
-//     }
-    
-//     Patch = patch_finder(F,patch_size);
-
-
-//     //apply gaussian filter to patch 
-    
-//     Gaussian_Patch = gaussian_Filtering(Patch, patch_size, patch_sigma);
-
-
-//     free(Patch);
-    
-// }
 void convolution_2D(float **P, float **kernel , float **result, int size) {
 
 // find center position of kernel (half of kernel size)
@@ -260,7 +236,7 @@ int kCenterY = size / 2;
     }
 }
 
-float* gaussian_Filtering(float* P, int size, float sigma){
+float* gaussian_Filtering(float* P, int size, float patch_sigma){
     float **kernel = (float **)malloc(size*sizeof(float*));
     for (int i = 0; i < size; i++)
     {
@@ -289,32 +265,53 @@ float* gaussian_Filtering(float* P, int size, float sigma){
         for (int j = 0; j < size; j++)
         {
             
-           kernel[i][j] = (1 / (2 * M_PI * sigma * sigma)) * exp(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * sigma * sigma));
+           kernel[i][j] = (1 / (2 * M_PI * patch_sigma * patch_sigma)) * (float)exp(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * patch_sigma * patch_sigma));
            sum += kernel[i][j];
         }
         
     }
-    //NORMALIZE
+    
+
+    
+    //NORMALIZE /sum and /max
+  
+
     for (int y = 0; y < size; y++)
     {
         for (int x = 0; x < size; x++)
         {
             kernel[y][x] /= sum;
+            
         }
         
-    } 
+    }
+    float max = kernel[0][0];
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
         {
-            printf("%f",kernel[i][j]);
+            if(max < kernel[i][j])
+                max = kernel[i][j];
         }
-        printf("\n");
+        
+    }
+     for (int y = 0; y < size; y++)
+    {
+        for (int x = 0; x < size; x++)
+        {
+            kernel[y][x] /= max;
+        }
+        
+    }
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            Patch[i][j] = Patch[i][j]*kernel[i][j];
+        }
         
     }
     
-
-    convolution_2D(Patch,kernel,Patch,size);
 
  
     P = matToRowMajor(Patch,size,size);
@@ -332,27 +329,60 @@ float* gaussian_Filtering(float* P, int size, float sigma){
     return P;    
 }
 
+float nonLocalMeans(float* F,float **Gaussian_Patches, int patch_size,int im_rows,int im_cols, float filter_sigma,int pixel_row,int pixel_col){
+    float new_pixel_val = 0;
+    float* CurrentPatch = Gaussian_Patches[pixel_row*im_cols + pixel_col];
+    float* TempPatch ;
+    float Norm2;
+    float* W = malloc(im_rows*im_cols*sizeof(float));
+    float Z ;
+    //Gaussian Patches is a row major Patches storage matrix for each pixel
+    for (int i = 0; i < im_rows*im_cols; i++)
+    {
+        TempPatch = Gaussian_Patches[i];
+        for (int j = 0; j < patch_size*patch_size; j++)
+        {
 
+            Norm2 += (CurrentPatch[j] - TempPatch[j])*(CurrentPatch[j] - TempPatch[j]);
 
-// for (int i = 0; i < COLS; i++)
-// {
-//     for (int j = 0; j < ROWS; j++)
-//     {
-//         for (int j = 0; j < size; j++)
-//         {
-//             float rows[size] = P[]
-//             float columns[size] = 
-//         }
+        }
+        Norm2 = sqrt(Norm2);
+        W[i] = (1 / Z)*exp(-(Norm2/(filter_sigma*filter_sigma)));    
+        Z += W[i];
+        W[i] /= Z;
+    }
+    //compute sum per row in W
+    int sum[im_rows];
+    for (int i = 0; i < im_rows; i++)
+    {
+        sum[im_rows] = 0;
+    }
+     
+    for (int i = 0; i < im_rows; i++)
+    {
+        for (int j = 0; j < im_cols; j++)
+        {
+            sum[i] += W[im_rows*i + im_cols];
+        }
         
-//     }
+    }
     
-// }
-// // for (int i = 0; i < COLS; i++)
-// // {
-// //     for (int j = 0; j < ROWS; j++)
-// //     {
-// //         printf("%f", a[i*COLS + j])
-// //     }
+    /*todo implement the denoise of the pixel*/
+   
+    new_pixel_val = F[im_rows*pixel_row + pixel_col] * W[im_rows*pixel_row + pixel_col] / sum[pixel_row];
+   
+    
+   
     
     
-// // }
+    
+     
+
+
+    free(CurrentPatch);
+    free(TempPatch);
+    free(W);
+    return new_pixel_val;
+}
+
+
