@@ -48,7 +48,7 @@ int main(){
     }
     
     
-    float NLM_filteredX[25];
+    float* NLM_filteredX = malloc(size*size*sizeof(float));
     float** Temp = (float**)malloc(size*sizeof(float*));
     for (int i = 0; i < size; i++)
     {
@@ -63,12 +63,20 @@ int main(){
         }
         
     }
-    matToRowMajor(Temp,size,size);
+    NLM_filteredX = matToRowMajor(Temp,size,size);
+  
     
-    printf("--------------NON LOCAL MEANS FILTERED MATRIX-------");
-    for(int i = 0; i < size*size; i++)
+    
+    printf("--------------NON LOCAL MEANS FILTERED MATRIX-------\n");
+    for(int i = 0; i < size; i++)
     {   
-        printf(" %.3f ", NLM_filteredX[i]);        
+        for (int j = 0; j < size; j++)
+        {
+            printf(" %f ", NLM_filteredX[i*size + j]); 
+        }
+        
+        printf("\n");
+               
     }
     
     
@@ -84,5 +92,6 @@ int main(){
     }
     free(Temp);
     free(pad);
+    free(NLM_filteredX);
     return 0;
 }
