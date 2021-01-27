@@ -335,20 +335,19 @@ float nonLocalMeans(float* F,float **Gaussian_Patches, int patch_size,int im_row
     float* TempPatch ;
     float Norm2;
     float* W = malloc(im_rows*im_cols*sizeof(float));
-    float Z ;
+    float Z = 0;
     //Gaussian Patches is a row major Patches storage matrix for each pixel
     for (int i = 0; i < im_rows*im_cols; i++)
     {
         TempPatch = Gaussian_Patches[i];
         for (int j = 0; j < patch_size*patch_size; j++)
         {
-
             Norm2 += (CurrentPatch[j] - TempPatch[j])*(CurrentPatch[j] - TempPatch[j]);
 
         }
         Norm2 = sqrt(Norm2);
+        Z+=exp(-(Norm2/(filter_sigma*filter_sigma)));
         W[i] = (1 / Z)*exp(-(Norm2/(filter_sigma*filter_sigma)));    
-        Z += W[i];
         W[i] /= Z;
     }
     //compute sum per row in W
