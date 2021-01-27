@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 //#include "G:\Program Files\MATLAB\R2018a\extern\include\mat.h"
 
@@ -9,6 +10,14 @@
 
 // float *F = matOpen("../code/data/house.mat",)
 
+void print_array(float *array, int rows, int cols){
+    for (int i=0; i<rows; i++){
+        for (int j=0; j<cols; j++){
+            printf("%f ", array[i*cols+j]);
+        }
+        printf("\n");
+    }
+}
 
 /*Returns the values of a patch given the central pixel positions in the image*/
 float* patch_finder(float *padded_array, int patch_size, int row_central, int col_central, int rows, int cols){
@@ -140,7 +149,7 @@ float *matToRowMajor(float** matrix, int n, int m){
         {
             for (int j = 0; j < m; j++)
             {
-                RowMajor[i*n+j] = matrix[i][j];
+                RowMajor[i*m+j] = matrix[i][j];
             }
             
         }
@@ -237,6 +246,7 @@ int kCenterY = size / 2;
 }
 
 float* gaussian_Filtering(float* P, int size, float patch_sigma){
+
     float **kernel = (float **)malloc(size*sizeof(float*));
     for (int i = 0; i < size; i++)
     {
@@ -257,6 +267,8 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
         }
         
     }
+    free(P);
+
     float sum = 0;
     float mu = size/2;
     //get_kerneL
@@ -265,7 +277,7 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
         for (int j = 0; j < size; j++)
         {
             
-           kernel[i][j] = (1 / (2 * M_PI * patch_sigma * patch_sigma)) * (float)exp(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * patch_sigma * patch_sigma));
+           kernel[i][j] = (1 / (2 * M_PI * patch_sigma * patch_sigma)) * expf(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * patch_sigma * patch_sigma));
            sum += kernel[i][j];
         }
         
@@ -295,7 +307,7 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
         }
         
     }
-     for (int y = 0; y < size; y++)
+    for (int y = 0; y < size; y++)
     {
         for (int x = 0; x < size; x++)
         {
@@ -314,7 +326,7 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
     
 
  
-    P = matToRowMajor(Patch,size,size);
+    float* new_patch = matToRowMajor(Patch,size,size);
     for (int i = 0; i < size; i++)
     {
         free(kernel[i]);
@@ -326,62 +338,64 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
     }
     free(Patch);
     
-    return P;    
+    return new_patch;    
 }
 
-float nonLocalMeans(float* F,float **Gaussian_Patches, int patch_size,int im_rows,int im_cols, float filter_sigma,int pixel_row,int pixel_col){
+
+float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_rows, int im_cols, float filter_sigma, int pixel_row, int pixel_col){
+    // The value to be returned
     float new_pixel_val = 0;
-    float* CurrentPatch = Gaussian_Patches[pixel_row*im_cols + pixel_col];
-    float* TempPatch ;
-    float Norm2;
-    float* W = malloc(im_rows*im_cols*sizeof(float));
-    float Z ;
+    
+    // The patch to be examined
+    float* Current_Patch = Gaussian_Patches[pixel_row*im_cols + pixel_col];
+    float* Temp_Patch ;
+    float Norm2 = 0;
+
+    // Variable to replace weight with itself according to Matlab
+    float max = FLT_MIN;
+    
+    // The weights and the sum of them
+    float* W = (float*)malloc(im_rows*im_cols*sizeof(float));
+    float Z = 0;
+
     //Gaussian Patches is a row major Patches storage matrix for each pixel
-    for (int i = 0; i < im_rows*im_cols; i++)
-    {
-        TempPatch = Gaussian_Patches[i];
-        for (int j = 0; j < patch_size*patch_size; j++)
-        {
-
-            Norm2 += (CurrentPatch[j] - TempPatch[j])*(CurrentPatch[j] - TempPatch[j]);
-
-        }
-        Norm2 = sqrt(Norm2);
-        W[i] = (1 / Z)*exp(-(Norm2/(filter_sigma*filter_sigma)));    
-        Z += W[i];
-        W[i] /= Z;
-    }
-    //compute sum per row in W
-    int sum[im_rows];
-    for (int i = 0; i < im_rows; i++)
-    {
-        sum[im_rows] = 0;
-    }
-     
-    for (int i = 0; i < im_rows; i++)
-    {
-        for (int j = 0; j < im_cols; j++)
-        {
-            sum[i] += W[im_rows*i + im_cols];
-        }
+    for (int i = 0; i < im_rows*im_cols; i++){
+        // Change the temporary patch and reset norm
+        Temp_Patch = Gaussian_Patches[i];
+        Norm2 = 0;
         
+        // Calculate the norm of the two patches
+        for (int j = 0; j < patch_size*patch_size; j++){
+            Norm2 += (Current_Patch[j]-Temp_Patch[j]) * (Current_Patch[j]-Temp_Patch[j]);
+        }
+
+        // Calculate the weight
+        Norm2 = sqrtf(Norm2);
+        W[i] = expf(-Norm2/(filter_sigma*filter_sigma));
+        Z += W[i];
+
+        // Find the max weight excluding the weight of the pixel with itself
+        if (i != pixel_row*im_cols + pixel_col){
+            if (max < W[i]){
+                max = W[i];
+            }
+        }
     }
-    
-    /*todo implement the denoise of the pixel*/
-   
-    new_pixel_val = F[im_rows*pixel_row + pixel_col] * W[im_rows*pixel_row + pixel_col] / sum[pixel_row];
-   
-    
-   
-    
-    
-    
-     
 
+    // Adjust the sum of the weights
+    Z += max;
+    Z -= W[pixel_row*im_cols + pixel_col];
+    
+    // Replace the weight of the pixel with itself (according to the Matlab code)
+    W[pixel_row*im_cols + pixel_col] = max;
 
-    free(CurrentPatch);
-    free(TempPatch);
+    // Find the new value of the pixel
+    for (int i = 0; i < im_rows*im_cols; i++){
+        new_pixel_val += W[i]*F[i]/Z;
+    }
+   
     free(W);
+
     return new_pixel_val;
 }
 
