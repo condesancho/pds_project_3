@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
+#ifndef RAND_MAX
+#define RAND_MAX ((int) ((unsigned) ~0 >> 1))
+#endif
 
 //#include "G:\Program Files\MATLAB\R2018a\extern\include\mat.h"
 
@@ -140,7 +143,12 @@ float* pad_array(float *F, int rows, int cols, int patch_size){
 
     return pad_array;
 }
+float randomBounded(float low, float high) {
+    double r;
 
+    r = (float) rand() / ((float) RAND_MAX + 1);
+    return (low + r * (high - low));
+}
 
 
 float *matToRowMajor(float** matrix, int n, int m){
@@ -371,7 +379,7 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
 
         // Calculate the weight
         Norm2 = sqrtf(Norm2);
-        W[i] = expf(-Norm2/(filter_sigma*filter_sigma));
+        W[i] = expf(-Norm2/(filter_sigma));
         Z += W[i];
 
         // Find the max weight excluding the weight of the pixel with itself

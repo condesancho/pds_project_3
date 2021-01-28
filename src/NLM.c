@@ -1,6 +1,8 @@
 #include "utilities.h"
 #include <time.h>
 
+
+
 float* denoise_image(float *F, int rows, int cols, int patch_size, float patch_sigma,  float filter_sigma){
     // Make the padded array
     float *pad = pad_array(F, rows, cols, patch_size);
@@ -37,21 +39,22 @@ int main(void){
 
     int size = 5;
     float *X = (float*)malloc(size*size*sizeof(float));
-
+    float max = 1;
+    float min = 0;
     srand(time(NULL));
     for(int i=0; i<size*size; i++){
-        X[i] = (float)rand()/RAND_MAX;
+        X[i] = randomBounded(0,0.9);
     }
 
-    // print_array(X, size, size);
+    print_array(X, size, size);
 
     int patch_size = 3;
-    float filter_sigma = 0.1;
+    float filter_sigma = 0.01;
     float patch_sigma = 1;
 
     float *f_new = denoise_image(X, size, size, patch_size, patch_sigma, filter_sigma);
-
-    // print_array(f_new, size, size);
+    printf("----Non-Local Means denoised image\n");
+    print_array(f_new, size, size);
 
     free(f_new);
     free(X);
