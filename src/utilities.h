@@ -353,7 +353,7 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
 
     // Variable to replace weight with itself according to Matlab
     float max = FLT_MIN;
-    
+
     // The weights and the sum of them
     float* W = (float*)malloc(im_rows*im_cols*sizeof(float));
     float Z = 0;
@@ -370,24 +370,22 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
         }
 
         // Calculate the weight
-        Norm2 = sqrtf(Norm2);
         W[i] = expf(-Norm2/(filter_sigma*filter_sigma));
-        Z += W[i];
 
         // Find the max weight excluding the weight of the pixel with itself
         if (i != pixel_row*im_cols + pixel_col){
+            Z += W[i];
             if (max < W[i]){
                 max = W[i];
             }
         }
     }
 
-    // Adjust the sum of the weights
-    Z += max;
-    Z -= W[pixel_row*im_cols + pixel_col];
-    
     // Replace the weight of the pixel with itself (according to the Matlab code)
     W[pixel_row*im_cols + pixel_col] = max;
+
+    // Adjust the sum of the weights
+    Z += max;
 
     // Find the new value of the pixel
     for (int i = 0; i < im_rows*im_cols; i++){

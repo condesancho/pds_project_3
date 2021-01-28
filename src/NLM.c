@@ -43,15 +43,15 @@ int main(void){
         X[i] = (float)rand()/RAND_MAX;
     }
 
-    // print_array(X, size, size);
+    print_array(X, size, size);
 
     int patch_size = 3;
-    float filter_sigma = 0.1;
+    float filter_sigma = 0.01;
     float patch_sigma = 1;
 
     float *f_new = denoise_image(X, size, size, patch_size, patch_sigma, filter_sigma);
 
-    // print_array(f_new, size, size);
+    print_array(f_new, size, size);
 
     free(f_new);
     free(X);
