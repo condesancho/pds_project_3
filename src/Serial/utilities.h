@@ -16,7 +16,7 @@
 void print_array(float *array, int rows, int cols){
     for (int i=0; i<rows; i++){
         for (int j=0; j<cols; j++){
-            printf("%f ", array[i*cols+j]);
+            printf("%f ,", array[i*cols+j]);
         }
         printf("\n");
     }
@@ -222,14 +222,62 @@ int kCenterY = size / 2;
         }
     }
 }
-
-float* gaussian_Filtering(float* P, int size, float patch_sigma){
-
-    float **kernel = (float **)malloc(size*sizeof(float*));
+float** gaussian_Kernel(int size, float sigma){
+    float **kernel2d = (float**)malloc(size*sizeof(float*));
     for (int i = 0; i < size; i++)
     {
-        kernel[i] = (float*)malloc(size*sizeof(float));
+        kernel2d[i] = malloc(size*sizeof(float));
     }
+    
+    float sum = 0;
+    float mu = size/2;
+    //get_kerneL
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            
+           kernel2d[i][j] = (1 / (2 * M_PI * sigma * sigma)) * expf(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * sigma * sigma));
+           sum += kernel2d[i][j];
+        }
+        
+    }
+    
+
+    
+    //NORMALIZE /sum and /max
+  
+
+    for (int y = 0; y < size; y++)
+    {
+        for (int x = 0; x < size; x++)
+        {
+            kernel2d[y][x] /= sum;
+            
+        }
+        
+    }
+    float max = kernel2d[0][0];
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            if(max < kernel2d[i][j])
+                max = kernel2d[i][j];
+        }
+        
+    }
+    for (int y = 0; y < size; y++)
+    {
+        for (int x = 0; x < size; x++)
+        {
+            kernel2d[y][x] /= max;
+        }
+        
+    }
+    return kernel2d;
+}
+float* gaussian_Filtering(float* P, float** kernel,int size, float patch_sigma){
     float **Patch = (float **)malloc(size*sizeof(float*));
     for (int i = 0; i < size; i++)
     {
@@ -247,52 +295,7 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
     }
     free(P);
 
-    float sum = 0;
-    float mu = size/2;
-    //get_kerneL
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
-            
-           kernel[i][j] = (1 / (2 * M_PI * patch_sigma * patch_sigma)) * expf(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * patch_sigma * patch_sigma));
-           sum += kernel[i][j];
-        }
-        
-    }
     
-
-    
-    //NORMALIZE /sum and /max
-  
-
-    for (int y = 0; y < size; y++)
-    {
-        for (int x = 0; x < size; x++)
-        {
-            kernel[y][x] /= sum;
-            
-        }
-        
-    }
-    float max = kernel[0][0];
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
-            if(max < kernel[i][j])
-                max = kernel[i][j];
-        }
-        
-    }
-    for (int y = 0; y < size; y++)
-    {
-        for (int x = 0; x < size; x++)
-        {
-            kernel[y][x] /= max;
-        }
-        
-    }
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
@@ -301,15 +304,7 @@ float* gaussian_Filtering(float* P, int size, float patch_sigma){
         }
         
     }
-    
-
- 
     float* new_patch = matToRowMajor(Patch,size,size);
-    for (int i = 0; i < size; i++)
-    {
-        free(kernel[i]);
-    }
-    free(kernel);
     for (int i = 0; i < size; i++)
     {
         free(Patch[i]);
