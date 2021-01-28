@@ -1,4 +1,4 @@
-#include "utilities.h"
+#include "./Serial/utilities.h"
 #include <time.h>
 
 int main(void){
@@ -50,18 +50,20 @@ int main(void){
     float* f_new = (float*)malloc(size*size*sizeof(float));
     for (int i = 0; i < size ; i++){
         for (int j = 0; j < size; j++){
-            f_new[i*size+j] = nonLocalMeans(X, Gaussian_Patches, patch_size, size, size, 1, i, j);
+            f_new[i*size+j] = nonLocalMeans(X, Gaussian_Patches, patch_size, size, size, 0.1, i, j);
         }
     }
     
     printf("\n");
     print_array(f_new, size, size);
-
-    
+    float* Image = malloc(64*64*sizeof(float));
+    Image = read_csv2("../data/house.csv",64,64);
+    print_array(Image,64,64);
     for (int i = 0; i < numberOfPixels; i++)
     {
         free(Gaussian_Patches[i]);
     }
+    free(Image);
     free(Gaussian_Patches);
     free(f_new);
     free(pad);
