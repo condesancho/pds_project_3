@@ -16,36 +16,10 @@
 void print_array(float *array, int rows, int cols){
     for (int i=0; i<rows; i++){
         for (int j=0; j<cols; j++){
-            printf("%f ,", array[i*cols+j]);
+            printf("%f ", array[i*cols+j]);
         }
         printf("\n");
     }
-}
-
-/*Returns the values of a patch given the central pixel positions in the image*/
-float* patch_finder(float *padded_array, int patch_size, int row_central, int col_central, int rows, int cols){
-
-    if (row_central<0 || row_central>rows-1 || col_central<0 || col_central>cols-1){
-        printf("Invalid centre for patch.\n");
-        exit(-1);
-    }
-
-    // Allocate space for the patch
-    float* Patch = (float *)malloc(patch_size*patch_size* sizeof(float));
-    
-    // Useful for changing line in the padded array
-    int padded_cols = cols + patch_size - 1;
-
-    // Stores the index of the first element of the patch in the padded aray
-    int first_elem = row_central*padded_cols + col_central;
-
-    for (int i = 0; i < patch_size; i++){
-        for (int j = 0; j < patch_size; j++){
-            Patch[i*patch_size + j] = padded_array[first_elem + i*padded_cols + j];
-        }
-    }
-
-    return Patch;
 }
 
 
@@ -143,6 +117,35 @@ float* pad_array(float *F, int rows, int cols, int patch_size){
 
     return pad_array;
 }
+
+
+/*Returns the values of a patch given the central pixel positions in the image*/
+float* patch_finder(float *padded_array, int patch_size, int row_central, int col_central, int rows, int cols){
+
+    if (row_central<0 || row_central>rows-1 || col_central<0 || col_central>cols-1){
+        printf("Invalid centre for patch.\n");
+        exit(-1);
+    }
+
+    // Allocate space for the patch
+    float* Patch = (float *)malloc(patch_size*patch_size* sizeof(float));
+    
+    // Useful for changing line in the padded array
+    int padded_cols = cols + patch_size - 1;
+
+    // Stores the index of the first element of the patch in the padded aray
+    int first_elem = row_central*padded_cols + col_central;
+
+    for (int i = 0; i < patch_size; i++){
+        for (int j = 0; j < patch_size; j++){
+            Patch[i*patch_size + j] = padded_array[first_elem + i*padded_cols + j];
+        }
+    }
+
+    return Patch;
+}
+
+
 float randomBounded(float low, float high) {
     double r;
 
@@ -152,22 +155,26 @@ float randomBounded(float low, float high) {
 
 
 float *matToRowMajor(float** matrix, int n, int m){
-        float *RowMajor = (float*)malloc(n*m*sizeof(float));
-        for (int i = 0; i < n; i++)
-        {
-            for (int j = 0; j < m; j++)
-            {
-                RowMajor[i*m+j] = matrix[i][j];
-            }
-            
-        }
-        
-        return RowMajor; 
+    float *RowMajor = (float*)malloc(n*m*sizeof(float));
+    for (int i = 0; i < n; i++){
+        for (int j = 0; j < m; j++){
+            RowMajor[i*m+j] = matrix[i][j];
+        }        
+    }
+
+    for (int i=0; i<n; i++){
+        free(matrix[i]);
+    }
+    free(matrix);
+
+    return RowMajor; 
 }
  
 
 float *read_csv2(char* filename, int rows, int cols){
+
     float *X = malloc(rows*cols*sizeof(float));
+    
     FILE *matFile = fopen(filename, "r");
 
     if (matFile == NULL){
@@ -192,11 +199,12 @@ float *read_csv2(char* filename, int rows, int cols){
     fclose(matFile);
     return X;
 }
+
 void convolution_2D(float **P, float **kernel , float **result, int size) {
 
-// find center position of kernel (half of kernel size)
-int kCenterX = size / 2;
-int kCenterY = size / 2;
+    // find center position of kernel (half of kernel size)
+    int kCenterX = size / 2;
+    int kCenterY = size / 2;
 
     for (int i = 0; i < size; ++i)              // rows
     {
@@ -222,94 +230,82 @@ int kCenterY = size / 2;
         }
     }
 }
+
+
 float** gaussian_Kernel(int size, float sigma){
+    
+    // Make the two-dimensional kernel
     float **kernel2d = (float**)malloc(size*sizeof(float*));
-    for (int i = 0; i < size; i++)
-    {
+    for (int i = 0; i < size; i++){
         kernel2d[i] = malloc(size*sizeof(float));
     }
     
+
     float sum = 0;
+    
     float mu = size/2;
-    //get_kerneL
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
-            
-           kernel2d[i][j] = (1 / (2 * M_PI * sigma * sigma)) * expf(-((j - mu) * (j - mu) + (i - mu) * (i - mu)) / (2 * sigma * sigma));
+    
+    float alpha = 1 / (2 * M_PI * sigma * sigma);
+
+    // Get the_kernel
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < size; j++){
+           kernel2d[i][j] = alpha * expf(-((j - mu)*(j - mu) + (i - mu)*(i - mu)) / (2 * sigma * sigma));
            sum += kernel2d[i][j];
         }
-        
     }
-    
 
     
-    //NORMALIZE /sum and /max
-  
-
-    for (int y = 0; y < size; y++)
-    {
-        for (int x = 0; x < size; x++)
-        {
-            kernel2d[y][x] /= sum;
-            
+    // NORMALIZE by dividing with the sum and the max
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < size; j++){
+            kernel2d[i][j] /= sum;
         }
-        
     }
+
+    // Find the max
     float max = kernel2d[0][0];
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < size; j++){
             if(max < kernel2d[i][j])
                 max = kernel2d[i][j];
         }
-        
     }
-    for (int y = 0; y < size; y++)
-    {
-        for (int x = 0; x < size; x++)
-        {
-            kernel2d[y][x] /= max;
+
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < size; j++){
+            kernel2d[i][j] /= max;
         }
-        
     }
+
     return kernel2d;
+
 }
+
+// Takes a patch and applies the gaussian filter
 float* gaussian_Filtering(float* P, float** kernel,int size, float patch_sigma){
+    
     float **Patch = (float **)malloc(size*sizeof(float*));
-    for (int i = 0; i < size; i++)
-    {
+    for (int i = 0; i < size; i++){
         Patch[i] = (float*)malloc(size*sizeof(float));
     }
     
     //Convert patch take to 2d array from row major
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < size; j++){
             Patch[i][j] = P[size*i + j];
         }
-        
     }
     free(P);
 
     
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < size; j++){
             Patch[i][j] = Patch[i][j]*kernel[i][j];
         }
-        
     }
-    float* new_patch = matToRowMajor(Patch,size,size);
-    for (int i = 0; i < size; i++)
-    {
-        free(Patch[i]);
-    }
-    free(Patch);
+
+    float* new_patch = matToRowMajor(Patch, size, size);
     
     return new_patch;    
 }
@@ -354,7 +350,7 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
         }
     }
 
-    // Replace the weight of the pixel with itself (according to the Matlab code)
+    // Change the weight of the pixel with itself (according to the Matlab code)
     W[pixel_row*im_cols + pixel_col] = max;
 
     // Adjust the sum of the weights
@@ -362,8 +358,9 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
 
     // Find the new value of the pixel
     for (int i = 0; i < im_rows*im_cols; i++){
-        new_pixel_val += W[i]*F[i]/Z;
+        new_pixel_val += W[i]*F[i];
     }
+    new_pixel_val /= Z;
    
     free(W);
 

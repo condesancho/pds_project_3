@@ -16,7 +16,7 @@ float* denoise_image(float *F, int rows, int cols, int patch_size, float patch_s
     for (int i = 0; i < rows; i++){
         for (int j = 0; j < cols; j++){
             Gaussian_Patches[i*cols+ j] = patch_finder(pad, patch_size, i, j, rows, cols);
-            Gaussian_Patches[i*cols + j] = gaussian_Filtering(Gaussian_Patches[i*cols + j],kernel, patch_size, patch_sigma);
+            Gaussian_Patches[i*cols + j] = gaussian_Filtering(Gaussian_Patches[i*cols + j], kernel, patch_size, patch_sigma);
         }  
     }
 
@@ -46,10 +46,11 @@ float* denoise_image(float *F, int rows, int cols, int patch_size, float patch_s
 int main(void){
 
     int size = 64;
-    float *X = (float*)malloc(size*size*sizeof(float));
+    float *X;
     float max = 1;
     float min = 0;
     srand(time(NULL));
+    
     X = read_csv2("../../data/house.csv",size,size);
 
     print_array(X, size, size);
