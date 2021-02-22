@@ -1,8 +1,6 @@
 #include "utilities.h"
 #include <time.h>
 
-
-
 float* denoise_image(float *F, int rows, int cols, int patch_size, float patch_sigma,  float filter_sigma){
     // Make the padded array
     float *pad = pad_array(F, rows, cols, patch_size);
@@ -47,21 +45,20 @@ int main(void){
 
     int size = 64;
     float *X;
-    float max = 1;
-    float min = 0;
-    srand(time(NULL));
     
-    X = read_csv2("../../data/house.csv",size,size);
+    X = read_csv2("/home/bill/Downloads/THMMY/0.05/distorted_image.csv", size, size);
 
-    print_array(X, size, size);
+    // create_csv("noised.csv", X, size, size);
+    // print_array(X, size, size);
 
-    int patch_size = 3;
-    float filter_sigma = 0.01;
-    float patch_sigma = 1;
+    int patch_size = 5;
+    float filter_sigma = 0.05;
+    float patch_sigma = 2.5;
 
     float *f_new = denoise_image(X, size, size, patch_size, patch_sigma, filter_sigma);
     printf("----Non-Local Means denoised image\n");
-    print_array(f_new, size, size);
+    
+    create_csv("denoised.csv", f_new, size, size);
 
     free(f_new);
     free(X);

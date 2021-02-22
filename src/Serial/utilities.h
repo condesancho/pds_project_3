@@ -3,15 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
+
 #ifndef RAND_MAX
 #define RAND_MAX ((int) ((unsigned) ~0 >> 1))
 #endif
 
-//#include "G:\Program Files\MATLAB\R2018a\extern\include\mat.h"
-
 // All matrices are in row major format
-
-// float *F = matOpen("../code/data/house.mat",)
 
 void print_array(float *array, int rows, int cols){
     for (int i=0; i<rows; i++){
@@ -182,22 +179,40 @@ float *read_csv2(char* filename, int rows, int cols){
         exit(1);
     }
 
-    float num,temp;
+    float num, temp;
 
     int i=0,j=0;
 
     for(i=0; i<rows; i++){
-        fscanf(matFile,"%f",&num);
         for(j=0; j<cols; j++){
-            if(fscanf(matFile,",%f",&num)==EOF) break;
+            if(fscanf(matFile,"%f,",&num)==EOF) break;
             X[i*cols+j]=num;
         }
-        fscanf(matFile,"%[^\n]\n");
     }
 
-    
     fclose(matFile);
+
     return X;
+}
+
+void create_csv(char *filename, float *array, int rows, int cols){
+
+    FILE *f = fopen(filename,"w");
+    
+    if (f == NULL){
+        printf("Couldn't open file.\n");
+        exit(1);
+    }
+ 
+    for(int i=0; i<rows; i++){
+ 
+        for(int j=0; j<cols-1; j++){
+            fprintf(f, "%f,", array[i*cols + j]);
+        }
+        fprintf(f, "%f\n", array[(i+1)*cols-1]);
+ 
+    }
+    fclose(f);
 }
 
 void convolution_2D(float **P, float **kernel , float **result, int size) {
@@ -317,18 +332,21 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
     
     // The patch to be examined
     float* Current_Patch = Gaussian_Patches[pixel_row*im_cols + pixel_col];
-    float* Temp_Patch ;
+    float* Temp_Patch;
     float Norm2 = 0;
 
-    // Variable to replace weight with itself according to Matlab
-    float max = FLT_MIN;
-
-    // The weights and the sum of them
-    float* W = (float*)malloc(im_rows*im_cols*sizeof(float));
+    // The weight and the sum of them
+    float W;
     float Z = 0;
 
     //Gaussian Patches is a row major Patches storage matrix for each pixel
     for (int i = 0; i < im_rows*im_cols; i++){
+
+        // If the Temp_Patch is the same with the Current_Patch do not take it into account
+        if (i == pixel_row*im_cols + pixel_col){
+            continue;
+        }
+
         // Change the temporary patch and reset norm
         Temp_Patch = Gaussian_Patches[i];
         Norm2 = 0;
@@ -339,32 +357,14 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
         }
 
         // Calculate the weight
-        W[i] = expf(-Norm2/filter_sigma);
+        W = expf(-Norm2/filter_sigma);
 
-        // Find the max weight excluding the weight of the pixel with itself
-        if (i != pixel_row*im_cols + pixel_col){
-            Z += W[i];
-            if (max < W[i]){
-                max = W[i];
-            }
-        }
+        // Find the sum of the weights
+        Z += W;
+        new_pixel_val += W*F[i];
     }
 
-    // Change the weight of the pixel with itself (according to the Matlab code)
-    W[pixel_row*im_cols + pixel_col] = max;
-
-    // Adjust the sum of the weights
-    Z += max;
-
-    // Find the new value of the pixel
-    for (int i = 0; i < im_rows*im_cols; i++){
-        new_pixel_val += W[i]*F[i];
-    }
     new_pixel_val /= Z;
-   
-    free(W);
 
     return new_pixel_val;
 }
-
-
