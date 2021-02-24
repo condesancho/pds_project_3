@@ -7,11 +7,7 @@
 #define RAND_MAX ((int) ((unsigned) ~0 >> 1))
 #endif
 
-#ifndef PATCH_ELEM
-#define PATCH_ELEM 9
-#endif
-
-// General functions used by the CPU
+// General functions used by the CPU and GPU
 
 __device__ void d_print_array(float *array, int rows, int cols){
     for (int i=0; i<rows; i++){
@@ -143,6 +139,52 @@ float *matToRowMajor(float** matrix, int n, int m){
     return RowMajor; 
 }
 
+float *read_csv2(char* filename, int rows, int cols){
+
+    float *X = (float*)malloc(rows*cols*sizeof(float));
+    
+    FILE *matFile = fopen(filename, "r");
+
+    if (matFile == NULL){
+        printf("Couldn't open file\n");
+        exit(1);
+    }
+
+    float num;
+
+    int i=0,j=0;
+
+    for(i=0; i<rows; i++){
+        for(j=0; j<cols; j++){
+            if(fscanf(matFile,"%f,",&num)==EOF) break;
+            X[i*cols+j]=num;
+        }
+    }
+
+    fclose(matFile);
+
+    return X;
+}
+
+void create_csv(char *filename, float *array, int rows, int cols){
+
+    FILE *f = fopen(filename,"w");
+    
+    if (f == NULL){
+        printf("Couldn't open file.\n");
+        exit(1);
+    }
+ 
+    for(int i=0; i<rows; i++){
+ 
+        for(int j=0; j<cols-1; j++){
+            fprintf(f, "%f,", array[i*cols + j]);
+        }
+        fprintf(f, "%f\n", array[(i+1)*cols-1]);
+ 
+    }
+    fclose(f);
+}
 
 float** gaussian_Kernel(int size, float sigma){
     
@@ -192,96 +234,70 @@ float** gaussian_Kernel(int size, float sigma){
 }
 
 
-__device__ void filter_patch(float *patch, float *gaussian_kernel, int patch_size){
-    for(int i=0; i<patch_size*patch_size; i++){
-        patch[i] = patch[i]*gaussian_kernel[i];
-    }
-}
-
-
 __device__ float cuNonLocalMeans(float *padded_F, float *gaussian_kernel, int patch_size, float filter_sigma, int im_rows, int im_cols){
     
-    int central_row = blockIdx.x*blockDim.x + threadIdx.x;
-    int central_col = blockIdx.y * blockDim.y + threadIdx.y;
+    int pixel_row = blockIdx.x;
+    int pixel_col = threadIdx.x;
     
     int padded_cols = im_rows + patch_size - 1;
 
     // Keeps the index of the first element of the image in the padded array
     int first_im_elem = (patch_size/2)*padded_cols + patch_size/2;
 
-    int first_element = central_row*padded_cols + central_col;
-
-    const int patch_elements = PATCH_ELEM;
-
-    float current_patch[patch_elements];
-    float temp_patch[patch_elements];
+    // The first element of the patch
+    int first_element = pixel_row*padded_cols + pixel_col;
 
     // The value to be returned
     float new_pixel_val = 0;
 
-    if (central_row < im_rows && central_col < im_cols){
-        // printf("I'm working on the pixel (%d, %d)\n", central_row, central_col);
 
-        // Find the patch and filter it
-        for (int i=0; i<patch_size; i++){
-            for (int j=0; j<patch_size; j++){
-                current_patch[i*patch_size+j] = padded_F[first_element + i*padded_cols + j];
+    // Useful variables
+    float temp_w = 0;
+    float Z = 0;
+    float norm;
+    float val = 0;
+    float patch_val;
+    float temp_patch_val;
+    float gaussian_filt;
+
+    int first_element_temp = 0;
+
+    // Find the weights for every element in the image
+    for (int i=0; i<im_rows; i++){
+        for (int j=0; j<im_cols; j++){
+           norm = 0;
+
+            // Finds the first element of the temp patch in the padded array
+            first_element_temp = i*padded_cols + j;
+
+            if (first_element_temp == first_element){
+                continue;
             }
-        }
-        filter_patch(current_patch, gaussian_kernel, patch_size);
 
+            for (int k=0; k<patch_size; k++){
+                for (int l=0; l<patch_size; l++){
+                    patch_val = padded_F[first_element + k*padded_cols + l];
+                    temp_patch_val = padded_F[first_element_temp + k*padded_cols + l];
 
-        // Useful variables
-        float temp_w = 0;
-        float Z = 0;
-        float norm;
-        float max_w = FLT_MIN;
-        float val = 0;
+                    gaussian_filt = gaussian_kernel[k*patch_size + l];
 
-        // Find the weights for every element in the image
-        for (int i=0; i<im_rows; i++){
-            for (int j=0; j<im_cols; j++){
-                norm = 0;
-
-                // Finds the first element of the temp patch in the padded array
-                first_element = i*padded_cols + j;
-
-                /// Get the value of the central pixel of the temp patch
-                val = padded_F[first_im_elem + first_element];
-
-                // Get the temp patch and filter it
-                for (int p=0; p<patch_size; p++){
-                    for (int q=0; q<patch_size; q++){
-                        temp_patch[p*patch_size+q] = padded_F[first_element + p*padded_cols + q];
-                    }
-                }
-                filter_patch(temp_patch, gaussian_kernel, patch_size);
-                
-                // Calculate the norm between the two patches
-                for (int k=0; k<patch_elements; k++){
-                    norm += (current_patch[k]-temp_patch[k]) * (current_patch[k]-temp_patch[k]);
-                }
-                
-                temp_w = expf(-norm/filter_sigma);
-                
-
-
-                // The patches must be different
-                if (first_element != central_row*padded_cols + central_col){
-                    Z += temp_w;
-                    if (max_w < temp_w){
-                        max_w = temp_w;
-                    }
-                    new_pixel_val += temp_w*val;
-                    
+                    norm += gaussian_filt*gaussian_filt*(patch_val - temp_patch_val)*(patch_val - temp_patch_val);
                 }
             }
+                
+            temp_w = expf(-norm/filter_sigma);
+                
+            Z += temp_w;
+
+            // Get the value of the central pixel of the temp patch
+            val = padded_F[first_im_elem + first_element_temp];
+
+            new_pixel_val += temp_w*val;
+
         }
-        val = padded_F[first_im_elem + central_row*padded_cols + central_col];
-        new_pixel_val += max_w*val;
-        Z += max_w;
-        new_pixel_val /= Z;
     }
+
+    new_pixel_val /= Z;
 
     return new_pixel_val;
 }
