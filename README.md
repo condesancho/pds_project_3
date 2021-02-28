@@ -29,3 +29,6 @@ Long story short the updated value of the pixel(assuming that we have a grayscal
 Where Ω is the definition space of the picture f:Ω -> R the initial picture with noise and f_hat the approximation of the denoised image.
 
 In this assignment the goal is to accelerate the algorithm using CUDA and turn the initial complexity of _O(N^4)_ to _O(N^2)_.
+
+## Results
+![lena](https://github.com/condesancho/pds_project_3/blob/master/DenoisedImagesPictures/Lena_256.png)
