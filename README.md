@@ -32,3 +32,4 @@ In this assignment the goal is to accelerate the algorithm using CUDA and turn t
 
 ## Results
 ![lena](https://github.com/condesancho/pds_project_3/blob/master/DenoisedImagesPictures/Lena_256.png)
+![umbrella](https://github.com/condesancho/pds_project_3/blob/master/DenoisedImagesPictures/GirlWithUmbrella.png)
