@@ -5,7 +5,21 @@ Students involved : </br>
                     Filis Charis          [github_profile](https://github.com/harryfilis)   email : harry.filis@yahoo.gr</br>
 #
 ## Non-Local Means Filter – Accelerated with CUDA.
+## Usage 
+prerequisites:
+--nvcc compiler with cl.exe </br>
+--gcc compiler</br>
+You can run the code in google colab as well and we applaud this.
 
+To use the code first you need to compile it.
+We have made a Makefile so you can go to Makefile directory and type make in terminal.
+
+Run:
+```sh
+  ./executable [Path to file] [No. image rows] [No. image cols] [Patch size]
+  (or for random image matrices)
+  ./executable [Path to file] [No. image rows] [No. image cols] [Patch size]
+```
 ## Abstract
 
 Non-Local Means is an algorithm applied to images in order to denoise them.
@@ -33,3 +47,6 @@ In this assignment the goal is to accelerate the algorithm using CUDA and turn t
 ## Results
 ![lena](https://github.com/condesancho/pds_project_3/blob/master/DenoisedImagesPictures/Lena_256.png)
 ![umbrella](https://github.com/condesancho/pds_project_3/blob/master/DenoisedImagesPictures/GirlWithUmbrella.png)
+
+The perfect application for this filter though is in biomedical pictures for example magnetic resonance picture
+![mag](https://github.com/condesancho/pds_project_3/blob/master/DenoisedImagesPictures/magnetic_resonance_256.png)
