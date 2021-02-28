@@ -7,7 +7,7 @@ Students involved : </br>
 ## Non-Local Means Filter – Accelerated with CUDA.
 ## Usage 
 prerequisites:
---nvcc compiler with cl.exe 
+--nvcc compiler with cl.exe </br>
 --gcc compiler</br>
 You can run the code in google colab as well and we applaud this.
 
