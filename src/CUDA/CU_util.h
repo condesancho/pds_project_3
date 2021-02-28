@@ -236,8 +236,13 @@ float** gaussian_Kernel(int size, float sigma){
 
 __device__ float cuNonLocalMeans(float *padded_F, float *gaussian_kernel, int patch_size, float filter_sigma, int im_rows, int im_cols){
     
-    int pixel_row = blockIdx.x;
-    int pixel_col = threadIdx.x;
+    int bx = blockIdx.x;
+    int tx = threadIdx.x;
+
+    int elem_indx = bx*blockDim.x + tx;
+
+    int pixel_row = elem_indx/im_cols;
+    int pixel_col = elem_indx%im_cols;
     
     int padded_cols = im_rows + patch_size - 1;
 
@@ -265,7 +270,7 @@ __device__ float cuNonLocalMeans(float *padded_F, float *gaussian_kernel, int pa
     // Find the weights for every element in the image
     for (int i=0; i<im_rows; i++){
         for (int j=0; j<im_cols; j++){
-           norm = 0;
+            norm = 0;
 
             // Finds the first element of the temp patch in the padded array
             first_element_temp = i*padded_cols + j;

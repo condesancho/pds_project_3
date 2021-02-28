@@ -336,7 +336,7 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
     float Norm2 = 0;
 
     // The weight and the sum of them
-    float W;
+    float W = 0;
     float Z = 0;
 
     //Gaussian Patches is a row major Patches storage matrix for each pixel
@@ -358,6 +358,7 @@ float nonLocalMeans(float* F, float **Gaussian_Patches, int patch_size, int im_r
 
         // Calculate the weight
         W = expf(-Norm2/filter_sigma);
+
 
         // Find the sum of the weights
         Z += W;
