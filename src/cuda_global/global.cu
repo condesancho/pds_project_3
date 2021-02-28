@@ -1,53 +1,5 @@
-#include "CU_util.h"
-
-
-__global__ void filter_image(float *filtered, float *padded, int im_rows, int im_cols, float *gaussian_kernel, int patch_size, float sigma){
-
-    int row = blockIdx.x;
-    int col = threadIdx.x;
-
-    filtered[row*im_cols + col] = cuNonLocalMeans(padded, gaussian_kernel, patch_size, sigma, im_rows , im_cols);   
-    
-}
-
-float* denoise_image(float* h_X, int rows, int cols, int patch_size, float patch_sigma, float filter_sigma){
-    
-    float** gaussian = gaussian_Kernel(patch_size, patch_sigma);
-    float* h_gaussian = matToRowMajor(gaussian, patch_size, patch_size);
-
-    // Make padded
-    float* h_padded = pad_array(h_X, rows, cols, patch_size);
-    int padded_rows = rows + patch_size -1;
-    int padded_cols = cols + patch_size -1;
-
-    float* h_filtered = (float*)malloc(rows*cols*sizeof(float));
-
-    float* d_padded;
-    float* d_filtered;
-    float* d_gaussian;
-
-    cudaMalloc(&d_padded, padded_rows*padded_cols*sizeof(float));
-    cudaMalloc(&d_filtered, rows*cols*sizeof(float));
-    cudaMalloc(&d_gaussian, patch_size*patch_size*sizeof(float));
-
-    cudaMemcpy(d_padded, h_padded, padded_rows*padded_cols*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_gaussian, h_gaussian, patch_size*patch_size*sizeof(float), cudaMemcpyHostToDevice);
-
-    filter_image<<<rows, cols>>>(d_filtered, d_padded, rows, cols, d_gaussian, patch_size, filter_sigma);
-
-    cudaMemcpy(h_filtered, d_filtered, rows*cols*sizeof(float), cudaMemcpyDeviceToHost);
-
-    cudaFree(d_padded);
-    cudaFree(d_gaussian);
-    cudaFree(d_filtered);
-
-    cudaDeviceSynchronize();
-
-    free(h_padded);
-    free(h_gaussian);
-
-    return h_filtered;
-}
+#include "../utilities.h"
+#include "util_global.h"
 
 
 int main(int argc, char* argv[]){
@@ -125,7 +77,7 @@ int main(int argc, char* argv[]){
 
     if(!flag){
         
-        char denoised_name[] = "denoised.csv";
+        char denoised_name[13] = "denoised";
 
         create_csv(denoised_name, new_image, rows, cols);
 
@@ -135,7 +87,7 @@ int main(int argc, char* argv[]){
             residual[i] = new_image[i]-image[i];
         }
 
-        char residual_name[] = "residual.csv";
+        char residual_name[13] = "residual";
 
         create_csv(residual_name, residual, rows, cols);
 
