@@ -23,7 +23,7 @@ Run:
 
 Create csv for Image(if rgb if not just delete the line rgb2gray and do the same)</br>
 run on Matlab the funticion JpgToCSV("PATH")</br>
-put noise by running ΑpplyNoise.m</br>
+put noise by running ΑpplyGaussianNoise.m</br>
 execute codes with the noisyfile</br>
 run ReadAndPrintImage.m</br>
 ## Abstract
