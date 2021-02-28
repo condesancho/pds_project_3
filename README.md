@@ -21,7 +21,7 @@ Run:
   ./executable [Path to file] [No. image rows] [No. image cols] [Patch size]
 ```
 
-Creat csv for Image(if rgb if not just delete the line rgb2gray and do the same)
+Create csv for Image(if rgb if not just delete the line rgb2gray and do the same)
 run on Matlab the funticion JpgToCSV("PATH")
 put noise by running ΑpplyNoise.m
 execute codes with the noisyfile
