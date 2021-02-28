@@ -1,8 +1,7 @@
 # pds_project_3
 
-
-
-
+Students involved : Arailopoulos Vaasilis [github](https://github.com/condesancho)  email : arailosb@gmail.com
+                    Filis Charis          [github](https://github.com/harryfilis)   email : harry.filis@yahoo.gr
 #
 ## Non-Local Means Filter – Accelerated with CUDA.
 
