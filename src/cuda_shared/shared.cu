@@ -1,7 +1,71 @@
 #include "../utilities.h"
 #include "util_shared.h"
 
+/**
+ * Function that takes an image and filters the noise.
+ * Same with the global implementation
+ * 
+ * Inputs:
+ *      float* h_X          --> The image to be filtered
+ *      int rows            --> The pixel rows of the image
+ *      int cols            --> The pixel cols of the image
+ *      int patch_size      --> The dimension of the square patch dezired
+ *      int patch_sigma     --> The sigma used to find the gaussian kernel weights
+ *      int filter_sigma    --> The sigma used in the non local means algorithm
+ * 
+ * Output:
+ *  The new filtered image
+ * 
+ * Works like the function in the util_global.h file.
+ * The threads initialized MUST be equal to the number of columns on the image.
+ */
+ float* denoise_image(float* h_X, int rows, int cols, int patch_size, float patch_sigma, float filter_sigma){
+    
+    float** gaussian = gaussian_Kernel(patch_size, patch_sigma);
+    float* h_gaussian = matToRowMajor(gaussian, patch_size, patch_size);
 
+    // Make padded
+    float* h_padded = pad_array(h_X, rows, cols, patch_size);
+    int padded_rows = rows + patch_size -1;
+    int padded_cols = cols + patch_size -1;
+
+    float* h_filtered = (float*)malloc(rows*cols*sizeof(float));
+
+    float* d_padded;
+    float* d_filtered;
+    float* d_gaussian;
+
+    // Allocate GPU memory
+    cudaMalloc(&d_padded, padded_rows*padded_cols*sizeof(float));
+    cudaMalloc(&d_filtered, rows*cols*sizeof(float));
+    cudaMalloc(&d_gaussian, patch_size*patch_size*sizeof(float));
+
+    // Pass the padded array and the gaussian weights in the GPU
+    cudaMemcpy(d_padded, h_padded, padded_rows*padded_cols*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_gaussian, h_gaussian, patch_size*patch_size*sizeof(float), cudaMemcpyHostToDevice);
+
+    int noBlocks = rows;
+    int noThreads = cols;
+    int shared_memory = patch_size*patch_size*sizeof(float) + (noThreads+patch_size-1)*patch_size*sizeof(float);
+
+    filter_image<<<noBlocks, noThreads, shared_memory>>>(d_filtered, d_padded, d_gaussian, rows, cols, patch_size, filter_sigma);
+
+    // Return the filtered image in the CPU
+    cudaMemcpy(h_filtered, d_filtered, rows*cols*sizeof(float), cudaMemcpyDeviceToHost);
+
+    cudaFree(d_padded);
+    cudaFree(d_gaussian);
+    cudaFree(d_filtered);
+
+    cudaDeviceSynchronize();
+
+    free(h_padded);
+    free(h_gaussian);
+
+    return h_filtered;
+}
+
+/*Main rutine*/
 int main(int argc, char* argv[]){
 
     int rows = 0;
