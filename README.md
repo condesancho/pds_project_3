@@ -21,11 +21,11 @@ Run:
   ./executable [Path to file] [No. image rows] [No. image cols] [Patch size]
 ```
 
-Create csv for Image(if rgb if not just delete the line rgb2gray and do the same)
-run on Matlab the funticion JpgToCSV("PATH")
-put noise by running ΑpplyNoise.m
-execute codes with the noisyfile
-run ReadCsvAndPrintImage.m
+Create csv for Image(if rgb if not just delete the line rgb2gray and do the same)</br>
+run on Matlab the funticion JpgToCSV("PATH")</br>
+put noise by running ΑpplyNoise.m</br>
+execute codes with the noisyfile</br>
+run ReadAndPrintImage.m</br>
 ## Abstract
 
 Non-Local Means is an algorithm applied to images in order to denoise them.
