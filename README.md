@@ -2,7 +2,7 @@
 
 Students involved : </br>
                     Arailopoulos Vasilis [github_profile](https://github.com/condesancho)  email : arailosb@gmail.com</br>
-                    Filis Charis          [github_profile](https://github.com/harryfilis)   email : harry.filis@yahoo.gr</br>
+                    Filis Charis          [github_profile](https://github.com/ArtoriasAbysssLayer)   email : harry.filis@yahoo.gr</br>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/condesancho/pds_project_3/blob/master/LICENSE)
 #
